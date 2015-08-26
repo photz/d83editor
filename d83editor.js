@@ -1,3 +1,4 @@
+
 // displays a list of files
 var FileList = function() {
 
@@ -26,8 +27,6 @@ var FileList = function() {
 	    
 	    var file = files[i];
 
-	    console.log(escape(file.name));
-
 	    var listEl = document.createElement('li');
 	    listEl.innerHTML = escape(file.name);
 	    list.appendChild(listEl);
@@ -45,14 +44,27 @@ var FileList = function() {
 };
 
 
+
+
 var d83editor = function() {
 
     var that = this;
 
+    
+    //
+    // style
+    //
+
+    entryBg = '#fff';
+    nodeBg = 'rgb(209, 231, 81)';
+    topLevelNodeBg = '#fff';
+
     //
     // private attributes
     //
+
     
+
     var container = document.getElementById('d83editor');
 
     var parser = true;
@@ -67,8 +79,6 @@ var d83editor = function() {
 	var text = Cp437Helper().convertToUTF8(reader.result);
 
 	parser = new d83parser(text);
-
-	console.log('parser: ' + parser);
 
 	parser.parse();
 
@@ -115,7 +125,6 @@ var d83editor = function() {
     };
 
     var handleFileSelect = function(evt) {
-	console.log('handleFileSelect() called');
 	files = evt.target.files;
 	fileList.update(files);
     };
@@ -155,6 +164,7 @@ var d83editor = function() {
     var Row = function(entry) {
 	var row = document.createElement('div');
 	row.classList.add('row');
+	row.style['background-color'] = entryBg;
 
 	row.onclick = function(event) {
 
@@ -175,9 +185,9 @@ var d83editor = function() {
 	};
 
 	var posField = document.createElement('div');
-	posField.classList.add('col-md-2');
+	posField.classList.add('col-md-1');
 	row.appendChild(posField);
-	posField.innerHTML = entry.lvl1 + '/' + entry.lvl2 + '/' + entry.lvl3;
+	posField.innerHTML = entry.lvl3;
 
 	var summaryField = document.createElement('div');
 	row.appendChild(summaryField);
@@ -203,15 +213,86 @@ var d83editor = function() {
 	return row;
     };
 
+    var drawEntry = function(entry) {
+	return new Row(entry);
+    };
+
+    var drawNode = function(node) {
+	var box = document.createElement('div');
+	box.classList.add('row');
+	box.style['background-color'] = nodeBg;
+	
+	var leftBox = document.createElement('div');
+	leftBox.innerHTML = node.lvl2;
+	leftBox.classList.add('col-md-1');
+	box.appendChild(leftBox);
+
+	var rightBox = document.createElement('div');
+	rightBox.classList.add('col-md-11');
+	box.appendChild(rightBox);
+	
+	var nodeHeader = document.createElement('div');
+	nodeHeader.innerHTML =
+	    '<h4>' + node.nodeSummary + '</h4>';
+	rightBox.appendChild(nodeHeader);
+
+
+	for (entry in node.entries) {
+	    if ('watch' == entry) continue;
+
+	    rightBox.appendChild(drawEntry(node.entries[entry]));
+	}
+
+	return box;
+    };
+
+    var drawTopLevelNode = function(topLevelNode) {
+	var box = document.createElement('div');
+	box.classList.add('row');
+	box.style['background-color'] = topLevelNodeBg;
+	
+	var leftBox = document.createElement('div');
+	leftBox.innerHTML = topLevelNode.lvl1;
+	leftBox.classList.add('col-md-1');
+	box.appendChild(leftBox);
+
+	var rightBox = document.createElement('div');
+	rightBox.classList.add('col-md-11');
+	box.appendChild(rightBox);
+
+	var topLevelNodeHeader = document.createElement('div');
+	topLevelNodeHeader.innerHTML =
+	    '<h3>' + topLevelNode.nodeSummary + '</h3>';
+	rightBox.appendChild(topLevelNodeHeader);
+
+
+	for (node in topLevelNode.nodes) {
+
+	    if ('watch' == node) continue;
+
+	    rightBox.appendChild(drawNode(topLevelNode.nodes[node]));
+	}
+
+	return box;
+    };
+
+    var drawDir = function(dir) {
+	var box = document.createElement('div');
+
+	for (topLevelNode in dir) {
+	    if ('watch' == topLevelNode) continue;
+
+	    box.appendChild(drawTopLevelNode(dir[topLevelNode]));
+	}
+
+	return box;
+    };
+
     this.redraw = function() {
 
-	parser.entries.forEach(function(entry) {
+	list.innerHTML = '';
 
-	    var row = new Row(entry);
-
-	    list.appendChild(row);
-
-	});
+	list.appendChild(drawDir(parser.dir));
     };
 
 };
