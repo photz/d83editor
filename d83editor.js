@@ -164,19 +164,12 @@ var d83editor = function() {
     var Row = function(entry) {
 	var row = document.createElement('div');
 	row.classList.add('row');
-	row.style['background-color'] = entryBg;
+	row.classList.add('list-group-item');
 
 	row.onclick = function(event) {
 
-	    // var bodyRect = document.body.getBoundingClientRect(),
-	    // 	elemRect = element.getBoundingClientRect(),
-	    // 	offset   = elemRect.top - bodyRect.top;
-
-	    // alert('Element is ' + offset + ' vertical pixels from <body>');
-
 	    var rowRect = row.getBoundingClientRect(),
 		containerRect = container.getBoundingClientRect();
-
 
 	    details.innerHTML = entry.description;
 
@@ -191,7 +184,7 @@ var d83editor = function() {
 
 	var summaryField = document.createElement('div');
 	row.appendChild(summaryField);
-	summaryField.classList.add('col-md-4');
+	summaryField.classList.add('col-md-7');
 	summaryField.innerHTML = entry.summary;
 
 	if (entry instanceof d83entry) {
@@ -219,23 +212,18 @@ var d83editor = function() {
 
     var drawNode = function(node) {
 	var box = document.createElement('div');
-	box.classList.add('row');
-	box.style['background-color'] = nodeBg;
-	
-	var leftBox = document.createElement('div');
-	leftBox.innerHTML = node.lvl2;
-	leftBox.classList.add('col-md-1');
-	box.appendChild(leftBox);
-
-	var rightBox = document.createElement('div');
-	rightBox.classList.add('col-md-11');
-	box.appendChild(rightBox);
+	box.classList.add('panel');
+	box.classList.add('panel-default');
 	
 	var nodeHeader = document.createElement('div');
-	nodeHeader.innerHTML =
-	    '<h4>' + node.nodeSummary + '</h4>';
-	rightBox.appendChild(nodeHeader);
+	nodeHeader.classList.add('panel-heading');
+	nodeHeader.innerHTML = node.nodeSummary;
+	box.appendChild(nodeHeader);
 
+	var rightBox = document.createElement('div');
+	rightBox.classList.add('panel-body');
+	rightBox.classList.add('list-group');
+	box.appendChild(rightBox);
 
 	for (entry in node.entries) {
 	    if ('watch' == entry) continue;
@@ -248,23 +236,18 @@ var d83editor = function() {
 
     var drawTopLevelNode = function(topLevelNode) {
 	var box = document.createElement('div');
-	box.classList.add('row');
-	box.style['background-color'] = topLevelNodeBg;
+	box.classList.add('panel');
+	box.classList.add('panel-primary');
 	
-	var leftBox = document.createElement('div');
-	leftBox.innerHTML = topLevelNode.lvl1;
-	leftBox.classList.add('col-md-1');
-	box.appendChild(leftBox);
+	var topLevelNodeHeader = document.createElement('div');
+	topLevelNodeHeader.classList.add('panel-heading');
+	topLevelNodeHeader.innerHTML = topLevelNode.nodeSummary;
+	box.appendChild(topLevelNodeHeader);
 
 	var rightBox = document.createElement('div');
-	rightBox.classList.add('col-md-11');
+	rightBox.classList.add('panel-body');
+	rightBox.classList.add('panel-group');
 	box.appendChild(rightBox);
-
-	var topLevelNodeHeader = document.createElement('div');
-	topLevelNodeHeader.innerHTML =
-	    '<h3>' + topLevelNode.nodeSummary + '</h3>';
-	rightBox.appendChild(topLevelNodeHeader);
-
 
 	for (node in topLevelNode.nodes) {
 
@@ -278,6 +261,7 @@ var d83editor = function() {
 
     var drawDir = function(dir) {
 	var box = document.createElement('div');
+	box.classList.add('panel-group');
 
 	for (topLevelNode in dir) {
 	    if ('watch' == topLevelNode) continue;
