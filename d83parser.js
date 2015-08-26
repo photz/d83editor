@@ -1,10 +1,34 @@
 var Unit = {
-    METER: 1,
-    SQUAREMETER: 2,
-    CUBICMETER: 3,
-    KILOGRAMM: 4,
-    TON: 5,
-    LITER: 6
+    M: {
+	toString: function() {
+	    return 'm';
+	}
+    },
+    M2: {
+	toString: function() {
+	    return 'm^2';
+	}
+    },
+    M3: {
+	toString: function() {
+	    return 'm^3';
+	}
+    },
+    KG: {
+	toString: function() {
+	    return 'kg';
+	}
+    },
+    T: {
+	toString: function() {
+	    return 't';
+	}
+    },
+    L: {
+	toString: function() {
+	    return 'l';
+	}
+    }
 };
 
 var Quantity = function(pre, post, unit) {
@@ -125,6 +149,15 @@ var d83parser = function(inputtext) {
 	watch: undefined
     };
 
+    var isDa90 = function(text) {
+	return text.substring(0, 2) == '00'
+	    || text.substring(0, 2) == 'T0';
+    };
+
+    if (!isDa90(text)) {
+	throw new Error('The input string violates the DA 90 format.');
+    }
+
     var commitCurrentNode = function() {
 	if (currentNode == null) {
 	    throw new Error();
@@ -199,14 +232,6 @@ var d83parser = function(inputtext) {
     
     
     var parseNodeHeader = function(line) {
-	// if (currentEntry != null) {
-	//     console.log('found a node header, but a current entry exists');
-	//     throw {
-	// 	name: 'UnexpectedHeader',
-	// 	message: 'a header for a node has been found even though there is a current entry/node'
-	//     }
-	// }
-
 	if (currentEntry != null) {
 	    commitEntry();
 	}
@@ -254,20 +279,13 @@ var d83parser = function(inputtext) {
 	var unit = line.substring(32, 40).trimRight();
 
 	if (!(unit in units)) {
-	    // unknown/illicit unit
-
-	    //console.log('no such unit: ' + unit);
-	    // throw {
-	    // 	name: 'NoSuchUnit'
+	    // TODO unknown/illicit unit
 	}
-	
-	
 
 	currentEntry = new d83entry(lvl1, lvl2, lvl3);
 
 	currentEntry.quantity = new Quantity(pre, post, unit);
 
-	//console.log(currentEntry);
     };
 
     var parseNodeSummary = function(line) {
@@ -350,8 +368,6 @@ var d83parser = function(inputtext) {
 
 	var next = text.indexOf("\n");
 
-	//console.log('indexof: ' + next);
-
 	var line = text.substring(0, next).trim();
 	
 	text = text.substring(next + 1, text.length - next);
@@ -370,11 +386,8 @@ var d83parser = function(inputtext) {
 
 	var content = line.substring(2, line.length - lineNumberLen - 2);
 
-
-
 	if (!(lineType in lineParsers)) {
-	    //console.log('no parser for line type ' + lineType);
-
+	    // no parser for this line
 	}
 	else {
 	    lineParsers[lineType](content);
@@ -390,8 +403,6 @@ var d83parser = function(inputtext) {
 
 	    line = getNextLine();
 
-	    //console.log('line: ' + line);
-
 	    if (line == '') {
 		break;
 	    }
@@ -400,10 +411,6 @@ var d83parser = function(inputtext) {
 	};
     };
 
-
-
-
-
-
+    
 };
 

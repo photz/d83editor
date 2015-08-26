@@ -19,17 +19,31 @@ var FileList = function() {
     this.update = function(files) {
 	container.innerHTML = '';
 
-	var list = document.createElement('ul');
-	container.appendChild(list);
+	var box = document.createElement('div');
+	box.classList.add('panel');
+	box.classList.add('panel-primary');
+	container.appendChild(box);
+
+	var panelHeading = document.createElement('div');
+	panelHeading.classList.add('panel-heading');
+	panelHeading.innerHTML = '<h4 class="panel-title">Files</h4>';
+	box.appendChild(panelHeading);
+
+	var list = document.createElement('div');
+	list.classList.add('list-group');
+	box.appendChild(list);
 
 
 	for (var i = 0, file; i < files.length; i++) {
 	    
 	    var file = files[i];
 
-	    var listEl = document.createElement('li');
+	    var listEl = document.createElement('div');
+	    listEl.classList.add('list-group-item');
 	    listEl.innerHTML = escape(file.name);
+	    listEl.style.cursor = 'pointer';
 	    list.appendChild(listEl);
+	    
 
 	    listEl.addEventListener('click', function() {
 		userOpenFileCallback(file);
@@ -63,40 +77,65 @@ var d83editor = function() {
     // private attributes
     //
 
-    
-
     var container = document.getElementById('d83editor');
 
-    var parser = true;
+    var files = [];
 
-    var files;
+    var currentFile = null;
+
+    var activeEntry = null;
 
     //
     // private methods
     //
 
     var loadFileCallback = function(reader, file) {
-	var text = Cp437Helper().convertToUTF8(reader.result);
 
-	parser = new d83parser(text);
+	currentFile = file;
 
-	parser.parse();
+	file.text = Cp437Helper().convertToUTF8(reader.result);
 
-	that.redraw();
+	try {
+	    file.d83parser = new d83parser(file.text);
+
+	    
+	    file.d83parser.parse();
+
+	    files.push(file);
+
+	    that.redraw(file.d83parser);
+	}
+	catch (e) {
+	    alert('The file you uploaded does not seem to be a valid DA 90 file.');
+	}
     };
 
 
     var openFileCallback = function(file) {
 
-	var reader = new FileReader();
+	if (files.indexOf(file) == -1) {
+	    // it's a new file
+	    
+	    var reader = new FileReader();
 
-	reader.onload = function() {
-	    loadFileCallback(reader, file)
-	};
+	    reader.onload = function() {
+		loadFileCallback(reader, file)
+	    };
 
-	reader.readAsArrayBuffer(file);
-	
+	    reader.readAsArrayBuffer(file);
 
+	}
+	else {
+	    // we've seen this file before
+
+	    currentFile = file;
+	    
+	    if (!('parser' in file)) {
+		throw new Error('a file failed to have the parser property');
+	    }
+	    
+	    that.redraw(file.parser);
+	}
     };
 
     var fileList = new FileList();
@@ -105,8 +144,32 @@ var d83editor = function() {
 
 
     var UploadForm = function(callback) {
+	var panel = document.createElement('div');
+	panel.classList.add('panel');
+	panel.classList.add('panel-primary');
+
+	//
+	// panel heading
+	//
+
+	var panelHeading = document.createElement('div');
+	panelHeading.classList.add('panel-heading');
+	panelHeading.innerHTML = '<h4 class="panel-title">Upload a d83 file</h4>';
+	panel.appendChild(panelHeading);
+
+
+	//
+	// panel body
+	// 
+
+	var panelBody = document.createElement('div');
+	panelBody.classList.add('panel-body');
+	panel.appendChild(panelBody);
+	
+	
 	var formGroup = document.createElement('div');
 	formGroup.classList.add('form-group');
+	panelBody.appendChild(formGroup);
 
 	var label = document.createElement('label');
 	label.classList.add('label-control');
@@ -114,34 +177,50 @@ var d83editor = function() {
 	formGroup.appendChild(label);
 
 	var fileInput = document.createElement('input');
-	fileInput.multiple = true;
 	fileInput.type = 'file';
+	fileInput.multiple = true;
 	formGroup.appendChild(fileInput);
 
 	// setup for the callback
 	fileInput.addEventListener('change', callback, false);
 
-	return formGroup;
+	return panel;
     };
 
     var handleFileSelect = function(evt) {
-	files = evt.target.files;
-	fileList.update(files);
+	//files = evt.target.files;
+	fileList.update(evt.target.files);
     };
-
-
     
     var setupView = function() {
 	container.innerHTML = '';
 	container.classList.add('container');
 	container.classList.add('row');
 
+	//
+	// top
+	// 
+
 	var top = document.createElement('div');
 	top.classList.add('row');
 	container.appendChild(top);
 
-	top.appendChild(new UploadForm(handleFileSelect));
-	top.appendChild(fileList.getElement());
+
+	var uploadFormBox = document.createElement('div');
+	uploadFormBox.classList.add('col-md-3');
+	uploadFormBox.appendChild(new UploadForm(handleFileSelect));
+	top.appendChild(uploadFormBox);
+
+
+	var fileListBox = document.createElement('div');
+	fileListBox.classList.add('col-md-3');
+	fileListBox.appendChild(fileList.getElement());
+	top.appendChild(fileListBox);
+
+
+	//
+	// bottom
+	//
 
 	var bottom = document.createElement('div');
 	bottom.classList.add('row');
@@ -152,10 +231,17 @@ var d83editor = function() {
 	list.classList.add('col-md-8');
 	bottom.appendChild(list);
 
+	//
+	// setup for the box that displays additional
+	// information relevant to the selected entry
+	//
+	var detailsContainer = document.createElement('div');
+	detailsContainer.classList.add('col-md-4');
+	bottom.appendChild(detailsContainer);
+
 	details = document.createElement('div');
-	details.classList.add('col-md-4');
 	details.classList.add('well');
-	bottom.appendChild(details);
+	detailsContainer.appendChild(details);
     };
 
     setupView();
@@ -165,15 +251,22 @@ var d83editor = function() {
 	var row = document.createElement('div');
 	row.classList.add('row');
 	row.classList.add('list-group-item');
+	row.style.cursor = 'pointer';
 
 	row.onclick = function(event) {
+
+	    if (activeEntry != null) {
+		activeEntry.setInactive();
+	    }
+
+	    row.setActive();
+
+	    activeEntry = row;
 
 	    var rowRect = row.getBoundingClientRect(),
 		containerRect = container.getBoundingClientRect();
 
-	    details.innerHTML = entry.description;
-
-	    details.style['margin-top'] = rowRect.top;
+	    details.innerHTML = '<p>' + entry.description + '</p>';
 
 	};
 
@@ -184,24 +277,55 @@ var d83editor = function() {
 
 	var summaryField = document.createElement('div');
 	row.appendChild(summaryField);
-	summaryField.classList.add('col-md-7');
+	summaryField.classList.add('col-md-6');
 	summaryField.innerHTML = entry.summary;
 
-	if (entry instanceof d83entry) {
-	    var quantityField = document.createElement('div');
-	    quantityField.classList.add('col-md-2');
-	    quantityField.innerHTML = entry.quantity;
-	    row.appendChild(quantityField);
+	//
+	// column for the quantity
+	//
+	var quantityField = document.createElement('div');
+	quantityField.classList.add('col-md-2');
+	quantityField.innerHTML = entry.quantity;
+	row.appendChild(quantityField);
 
-	    var priceField = document.createElement('div');
-	    priceField.classList.add('col-md-2');
-	    row.appendChild(priceField);
-	    
-	    var priceInput = document.createElement('input');
-	    priceInput.classList.add('form-control');
-	    priceField.appendChild(priceInput);
-	    
-	}
+	//
+	// column for the price
+	//
+	var priceField = document.createElement('div');
+	priceField.classList.add('col-md-2');
+	row.appendChild(priceField);
+	
+	var priceInput = document.createElement('input');
+	priceInput.classList.add('form-control');
+	priceField.appendChild(priceInput);
+	
+	//
+	// column for the total price
+	//
+	var totalPriceField = document.createElement('div');
+	totalPriceField.classList.add('col-md-1');
+	row.appendChild(totalPriceField);
+
+	//
+	// callback to update the total price
+	//
+	priceInput.addEventListener('change', function(evt) {
+	    if (isNaN(priceInput.value)) {
+		totalPriceField.innerHTML = '<p>?</p>';
+	    }
+	    else {
+		totalPriceField.innerHTML =
+		    '<p>' + priceInput.value + '</p>';
+	    }
+	});
+
+	row.setActive = function() {
+	    row.classList.add('active');
+	};
+
+	row.setInactive = function() {
+	    row.classList.remove('active');
+	};
 
 	return row;
     };
@@ -217,13 +341,26 @@ var d83editor = function() {
 	
 	var nodeHeader = document.createElement('div');
 	nodeHeader.classList.add('panel-heading');
-	nodeHeader.innerHTML = node.nodeSummary;
+	nodeHeader.innerHTML = '<h4 class="panel-title">' +
+	    node.nodeSummary + '</h4>';
+	nodeHeader.style.cursor = 'pointer';
 	box.appendChild(nodeHeader);
 
 	var rightBox = document.createElement('div');
 	rightBox.classList.add('panel-body');
 	rightBox.classList.add('list-group');
+	rightBox.style.display = 'none';
 	box.appendChild(rightBox);
+
+	// make collapsible
+	nodeHeader.addEventListener('click', function(evt) {
+	    if (rightBox.style.display == 'none') {
+		rightBox.style.display = 'block';
+	    }
+	    else {
+		rightBox.style.display = 'none';
+	    }
+	});
 
 	for (entry in node.entries) {
 	    if ('watch' == entry) continue;
@@ -241,13 +378,27 @@ var d83editor = function() {
 	
 	var topLevelNodeHeader = document.createElement('div');
 	topLevelNodeHeader.classList.add('panel-heading');
-	topLevelNodeHeader.innerHTML = topLevelNode.nodeSummary;
+	topLevelNodeHeader.innerHTML = '<h3 class="panel-title">' +
+	    topLevelNode.nodeSummary + '</h3>';
+	topLevelNodeHeader.style.cursor = 'pointer';
 	box.appendChild(topLevelNodeHeader);
+	
 
 	var rightBox = document.createElement('div');
 	rightBox.classList.add('panel-body');
 	rightBox.classList.add('panel-group');
+	rightBox.style.display = 'none';
 	box.appendChild(rightBox);
+
+	// make collapsible
+	topLevelNodeHeader.addEventListener('click', function(evt) {
+	    if (rightBox.style.display == 'none') {
+		rightBox.style.display = 'block';
+	    }
+	    else {
+		rightBox.style.display = 'none';
+	    }
+	});
 
 	for (node in topLevelNode.nodes) {
 
@@ -272,7 +423,11 @@ var d83editor = function() {
 	return box;
     };
 
-    this.redraw = function() {
+    this.redraw = function(parser) {
+
+	if (!(parser instanceof d83parser)) {
+	    throw new TypeError('d83editor.redraw() expects a d83parser');
+	}
 
 	list.innerHTML = '';
 
