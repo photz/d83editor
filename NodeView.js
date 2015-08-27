@@ -17,7 +17,23 @@ var NodeView = function(node, entryViewClickCallback) {
 
     var panelBody = null;
 
+    var panelFooterTotal = null;
+    
 
+
+
+    var setFooter = function(newValue) {
+	if (panelFooterTotal.hasChildNodes()) {
+	    panelFooterTotal.removeChild(
+		panelFooterTotal.firstChild);
+	}
+
+	panelFooterTotal.appendChild(
+	    document.createTextNode(newValue));
+
+    };
+
+    
     var loadEntries = function() {
 	
 	for (entry in node.entries) {
@@ -47,14 +63,16 @@ var NodeView = function(node, entryViewClickCallback) {
     // * inside the NodeView we update the price
     // * and we notify the outside world
     var internalUserChangePriceCallback = function(entry) {
-	setFooter(node.getNetTotal());
+	var centsPerEuro = 100;
+
+	var prettyTotal = (node.getNetTotal() / centsPerEuro).toFixed(2);
+
+	setFooter(prettyTotal);
 
 	if (typeof(externalUserChangePriceCallback) === 'function') {
 	    externalUserChangePriceCallback(node);
 	}
     };
-    
-
     
     (function() {
 	
@@ -88,20 +106,10 @@ var NodeView = function(node, entryViewClickCallback) {
 	box.appendChild(panelFooter);
 	panelFooter.style.display = 'none';
 
-	var panelFooterTotal = document.createElement('div');
+	panelFooterTotal = document.createElement('div');
 	panelFooterTotal.classList.add('col-md-offset-11');
 	panelFooter.appendChild(panelFooterTotal);
 
-	var setFooter = function(newValue) {
-	    if (panelFooterTotal.hasChildNodes()) {
-		panelFooterTotal.removeChild(
-		    panelFooterTotal.firstChild);
-	    }
-
-	    panelFooterTotal.appendChild(
-		document.createTextNode(newValue));
-
-	};
 	
 	// make collapsible
 	panelHeading.addEventListener('click', function(evt) {
@@ -132,9 +140,6 @@ var NodeView = function(node, entryViewClickCallback) {
 
 	externalUserChangePriceCallback = func;
     };
-
-
-
 
 
     this.getElement = function() {

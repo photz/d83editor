@@ -75,7 +75,7 @@ var d83editor = function() {
 
     var openFileCallback = function(file) {
 
-	if (files.indexOf(file) == -1) {
+	if (files.indexOf(file) === -1) {
 	    // it's a new file
 	    
 	    var reader = new FileReader();
@@ -225,7 +225,7 @@ var d83editor = function() {
 	    throw new TypeError('expecting an EntryView');
 	}
 
-	if (activeEntry != null) {
+	if (activeEntry !== null) {
 	    activeEntry.setInactive();
 	}
 
@@ -249,12 +249,12 @@ var d83editor = function() {
 	var box = document.createElement('div');
 	box.classList.add('panel-group');
 
-	if (typeof(entryViewClickCallback) != 'function') {
+	if (typeof(entryViewClickCallback) !== 'function') {
 	    throw new TypeError('entryViewClickCallback must be a function');
 	}
 
 	for (topLevelNode in dir) {
-	    if ('watch' == topLevelNode) continue;
+	    if ('watch' === topLevelNode) continue;
 
 	    var topLevelNodeView = new TopLevelNodeView(dir[topLevelNode], entryViewClickCallback);
 	    

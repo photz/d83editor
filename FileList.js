@@ -8,7 +8,7 @@ var FileList = function() {
     var userOpenFileCallback;
 
     this.setOpenFileCallback = function(func) {
-	if (typeof(func) != 'function') {
+	if (typeof(func) !== 'function') {
 	    throw new TypeError('the callback needs to be a function');
 	}
 

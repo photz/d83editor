@@ -8,7 +8,7 @@ var EntryView = function(entry) {
     
     var box = null;
 
-    var externalUserChangePriceCallback;
+    var externalUserChangePriceCallback = null;
 
     
     (function() {
@@ -79,16 +79,46 @@ var EntryView = function(entry) {
 	// callback to update the total price
 	//
 	priceInput.addEventListener('change', function(evt) {
-	    if (isNaN(priceInput.value)) {
+
+	    var priceRegex = /^\d+(,(\d\d))?$/;
+
+	    var matches = priceRegex.exec(priceInput.value);
+
+	    if (matches === null) {
+
 		priceField.classList.add('has-error');
 	    }
 	    else {
-		entry.netPricePerUnit = parseFloat(priceInput.value);
-		priceField.classList.remove('has-error');
-		
-		totalPriceField.innerHTML =
-		    '<p>' + entry.getNetTotal() + '</p>';
 
+		var centsPerEuro = 100;
+
+
+		var priceCents = parseInt(matches[0]) * centsPerEuro;
+
+		if (matches[2] !== undefined) {
+		    priceCents += parseInt(matches[2]);
+		}
+
+
+		// clear the contents of the node
+		if (totalPriceField.hasChildNodes()) {
+		    totalPriceField.removeChild(
+			totalPriceField.firstChild);
+		}
+
+		// in case the field had an error previously
+		// reset it
+		priceField.classList.remove('has-error');
+
+
+		entry.netPricePerUnit = priceCents;
+
+		var prettyTotal = (entry.getNetTotal() / 100).toFixed(2);
+
+		totalPriceField.appendChild(
+		    document.createTextNode(prettyTotal));
+
+		// notify the outside world that a price has been changed
 		externalUserChangePriceCallback();
 	    }
 	});
@@ -101,7 +131,7 @@ var EntryView = function(entry) {
     };
 
     this.setClickCallback = function(func) {
-	if (typeof(func) != 'function') {
+	if (typeof(func) !== 'function') {
 	    throw new TypeError('expecting a function as a callback');
 	}
 
@@ -115,7 +145,7 @@ var EntryView = function(entry) {
     };
 
     this.setUserChangePriceCallback = function(func) {
-	if (typeof(func) != 'function') {
+	if (typeof(func) !== 'function') {
 	    throw new TypeError('expecting a function');
 	}
 

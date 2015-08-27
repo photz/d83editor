@@ -112,6 +112,8 @@ var TopLevelNodeView = function(topLevelNode, entryViewClickCallback) {
 		panelFooterTotal.firstChild);
 	}
 
+
+
 	panelFooterTotal.appendChild(
 	    document.createTextNode(newValue));
 
@@ -119,7 +121,12 @@ var TopLevelNodeView = function(topLevelNode, entryViewClickCallback) {
 
 
     var internalUserChangePriceCallback = function(node) {
-	setFooter(topLevelNode.getNetTotal());
+	var centsPerEuro = 100;
+
+	var prettyTotal = (topLevelNode.getNetTotal() / centsPerEuro).toFixed(2);
+
+	setFooter(prettyTotal);
+
     };
 
 };

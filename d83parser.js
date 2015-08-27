@@ -85,7 +85,7 @@ var d83toplevelnode = function(lvl1) {
 
 	for (node in that.nodes) {
 
-	    if ('watch' == node) continue;
+	    if ('watch' === node) continue;
 	    
 	    sum += that.nodes[node].getNetTotal();
 
@@ -125,7 +125,7 @@ var d83node = function(lvl1, lvl2) {
 	var sum = 0;
 
 	for (entry in that.entries) {
-	    if ('watch' == entry) continue;
+	    if ('watch' === entry) continue;
 
 	    sum += that.entries[entry].getNetTotal();
 	}
@@ -189,7 +189,7 @@ var d83entry = function(lvl1, lvl2, lvl3) {
 var d83parser = function(inputtext) {
     var that = this;
 
-    if (typeof(inputtext) != 'string') {
+    if (typeof(inputtext) !== 'string') {
 	throw new TypeError('d83parser expects a string');
     }
 
@@ -230,8 +230,8 @@ var d83parser = function(inputtext) {
     var currentIndex = 0;
 
     var isDa90 = function(text) {
-	return text.substring(0, 2) == '00'
-	    || text.substring(0, 2) == 'T0';
+	return text.substring(0, 2) === '00'
+	    || text.substring(0, 2) === 'T0';
     };
 
     if (!isDa90(text)) {
@@ -239,11 +239,11 @@ var d83parser = function(inputtext) {
     }
 
     var commitCurrentNode = function() {
-	if (currentNode == null) {
+	if (currentNode === null) {
 	    throw new Error();
 	}
 
-	if (currentTopLevelNode == null) {
+	if (currentTopLevelNode === null) {
 	    throw new Error('while trying to commit node ' +
 			    currentNode + ', currentTopLevelNode ' +
 			    'was null');
@@ -254,16 +254,16 @@ var d83parser = function(inputtext) {
     };
 
     var commitTopLevelNode = function() {
-	if (currentTopLevelNode == null) {
+	if (currentTopLevelNode === null) {
 	    throw new Error('trying to commit a top-level node, ' +
 			    'but currentTopLevelNode is null');
 	}
 
-	if (currentNode != null) {
+	if (currentNode !== null) {
 	    throw new Error();
 	}
 
-	if (currentEntry != null) {
+	if (currentEntry !== null) {
 	    throw new Error();
 	}
 
@@ -276,7 +276,7 @@ var d83parser = function(inputtext) {
     };
 
     var commitEntry = function(line) {
-	if (currentEntry == null) {
+	if (currentEntry === null) {
 	    throw new Error('trying to commit an entry, ' +
 			    'but currentEntry is null');
 	}
@@ -286,7 +286,7 @@ var d83parser = function(inputtext) {
 			    'but it is not a d83entry');
 	}
 
-	if (currentNode == null) {
+	if (currentNode === null) {
 	    throw new Error('trying to commit an entry, but ' +
 			    'currentNode is null');
 	}
@@ -312,7 +312,7 @@ var d83parser = function(inputtext) {
     
     
     var parseNodeHeader = function(line) {
-	if (currentEntry != null) {
+	if (currentEntry !== null) {
 	    commitEntry();
 	}
 
@@ -322,11 +322,11 @@ var d83parser = function(inputtext) {
 	if (isNaN(lvl2)) {
 	    // lvl 1 node
 	    
-	    if (currentNode != null) {
+	    if (currentNode !== null) {
 		commitCurrentNode();
 	    }
 
-	    if (currentTopLevelNode != null) {
+	    if (currentTopLevelNode !== null) {
 		commitTopLevelNode();
 	    }
 
@@ -335,7 +335,7 @@ var d83parser = function(inputtext) {
 	else {// lvl2 != Nan
 	    // lvl 2 node
 
-	    if (currentNode != null) {
+	    if (currentNode !== null) {
 		commitCurrentNode();
 	    }
 
@@ -346,7 +346,7 @@ var d83parser = function(inputtext) {
 
     
     var parseEntryHeader = function(line) {
-	if (currentEntry != null) {
+	if (currentEntry !== null) {
 	    commitEntry();
 	}
 
@@ -394,10 +394,10 @@ var d83parser = function(inputtext) {
 
     var parseNodeSummary = function(line) {
 
-	if (currentNode != null) {
+	if (currentNode !== null) {
 	    currentNode.nodeSummary += line.trim() + ' ';
 	}
-	else if (currentTopLevelNode != null) {
+	else if (currentTopLevelNode !== null) {
 	    currentTopLevelNode.nodeSummary += line.trim() + ' ';
 	}
 	else {
@@ -408,13 +408,13 @@ var d83parser = function(inputtext) {
 
     var parseSummary = function(line) {
 
-	if (currentEntry != null) {
+	if (currentEntry !== null) {
 	    currentEntry.summary += line.trim() + ' ';
 	}
-	else if (currentNode != null) {
+	else if (currentNode !== null) {
 	    currentNode.summary += line.trim() + ' ';
 	}
-	else if (currentTopLevelNode != null) {
+	else if (currentTopLevelNode !== null) {
 	    currentTopLevelNode.summary += line.trim() + ' ';
 	}
 	else {
@@ -424,13 +424,13 @@ var d83parser = function(inputtext) {
     };
 
     var parseDescription = function(line) {
-	if (currentEntry != null) {
+	if (currentEntry !== null) {
 	    currentEntry.description += line.trim() + ' ';
 	}
-	else if (currentNode != null) {
+	else if (currentNode !== null) {
 	    currentNode.description += line.trim() + ' ';
 	}
-	else if (currentTopLevelNode != null) {
+	else if (currentTopLevelNode !== null) {
 	    currentTopLevelNode.description += line.trim() + ' ';
 	}
 	else {
@@ -462,7 +462,7 @@ var d83parser = function(inputtext) {
     var getNextLine = function() {
 	var nextLinefeed = text.indexOf("\n", currentIndex + 1);
 
-	if (nextLinefeed == -1) {
+	if (nextLinefeed === -1) {
 	    return null;
 	}
 
@@ -498,14 +498,14 @@ var d83parser = function(inputtext) {
 
 	    var line = getNextLine();
 
-	    if (null == line) break;
+	    if (line === null) break;
 	    
 	    parseLine(line);
 	};
 
-	if (currentEntry != null) commitEntry();
-	if (currentNode != null) commitCurrentNode();
-	if (currentTopLevelNode != null) commitTopLevelNode();
+	if (currentEntry !== null) commitEntry();
+	if (currentNode !== null) commitCurrentNode();
+	if (currentTopLevelNode !== null) commitTopLevelNode();
     };
 
     
