@@ -3,75 +3,42 @@ var NodeView = function(node, entryViewClickCallback) {
 	throw new TypeError('expecting a d83node');
     }
 
-    if (typeof(entryViewClickCallback) != 'function') {
+    if (typeof(entryViewClickCallback) !== 'function') {
 	throw new TypeError('argument entryViewClickCallback' +
 			    'must be a function');
     }
 
 
-    var externalUserChangePriceCallback;
+    var externalUserChangePriceCallback = null;
 
-    this.setUserChangePriceCallback = function(func) {
-	if (typeof(func) != 'function') {
-	    throw new TypeError('expecting a function');
+    var isLoaded = false;
+
+    var box = null;    
+
+    var panelBody = null;
+
+
+    var loadEntries = function() {
+	
+	for (entry in node.entries) {
+	    if ('watch' === entry) continue;
+
+	    var thisEntry = node.entries[entry];
+
+	    var entryView = new EntryView(thisEntry);
+
+	    panelBody.appendChild(entryView.getElement());
+
+	    // set callbacks
+
+	    entryView.setClickCallback(entryViewClickCallback);
+
+	    entryView.setUserChangePriceCallback(
+		internalUserChangePriceCallback);
+
 	}
-
-	externalUserChangePriceCallback = func;
-    };
-
-
-
-    var box = document.createElement('div');
-    box.classList.add('panel');
-    box.classList.add('panel-default');
-    
-    var nodeHeader = document.createElement('div');
-    nodeHeader.classList.add('panel-heading');
-    nodeHeader.innerHTML = '<h4 class="panel-title">' +
-	node.getPrettyPath() + ' ' + node.nodeSummary + '</h4>';
-    nodeHeader.style.cursor = 'pointer';
-    box.appendChild(nodeHeader);
-
-    var rightBox = document.createElement('div');
-    rightBox.classList.add('panel-body');
-    rightBox.classList.add('list-group');
-    rightBox.style.display = 'none';
-    box.appendChild(rightBox);
-
-    //
-    // panel footer
-    //
-    var panelFooter = document.createElement('div');
-    panelFooter.classList.add('panel-footer');
-    box.appendChild(panelFooter);
-    panelFooter.style.display = 'none';
-
-    var panelFooterTotal = document.createElement('div');
-    panelFooterTotal.classList.add('col-md-offset-11');
-    panelFooter.appendChild(panelFooterTotal);
-
-    var setFooter = function(newValue) {
-	if (panelFooterTotal.hasChildNodes()) {
-	    panelFooterTotal.removeChild(
-		panelFooterTotal.firstChild);
-	}
-
-	panelFooterTotal.appendChild(
-	    document.createTextNode(newValue));
 
     };
-    
-    // make collapsible
-    nodeHeader.addEventListener('click', function(evt) {
-	if (rightBox.style.display == 'none') {
-	    rightBox.style.display = 'block';
-	    panelFooter.style.display = 'block';
-	}
-	else {
-	    rightBox.style.display = 'none';
-	    panelFooter.style.display = 'none';
-	}
-    });
 
 
 
@@ -88,24 +55,84 @@ var NodeView = function(node, entryViewClickCallback) {
     };
     
 
+    
+    (function() {
+	
+	box = document.createElement('div');
+	box.classList.add('panel');
+	box.classList.add('panel-default');
+	
+	var panelHeading = document.createElement('div');
+	panelHeading.classList.add('panel-heading');
+	panelHeading.style.cursor = 'pointer';
+	box.appendChild(panelHeading);
 
-    for (entry in node.entries) {
-	if ('watch' == entry) continue;
+	var panelTitle = document.createElement('h4');
+	panelTitle.classList.add('panel-title');
+	panelTitle.appendChild(
+	    document.createTextNode([node.getPrettyPath(),
+				     node.nodeSummary].join(' ')));
+	panelHeading.appendChild(panelTitle);
 
-	var thisEntry = node.entries[entry];
+	panelBody = document.createElement('div');
+	panelBody.classList.add('panel-body');
+	panelBody.classList.add('list-group');
+	panelBody.style.display = 'none';
+	box.appendChild(panelBody);
 
-	var entryView = new EntryView(thisEntry);
+	//
+	// panel footer
+	//
+	var panelFooter = document.createElement('div');
+	panelFooter.classList.add('panel-footer');
+	box.appendChild(panelFooter);
+	panelFooter.style.display = 'none';
 
-	rightBox.appendChild(entryView.getElement());
+	var panelFooterTotal = document.createElement('div');
+	panelFooterTotal.classList.add('col-md-offset-11');
+	panelFooter.appendChild(panelFooterTotal);
 
-	// set callbacks
+	var setFooter = function(newValue) {
+	    if (panelFooterTotal.hasChildNodes()) {
+		panelFooterTotal.removeChild(
+		    panelFooterTotal.firstChild);
+	    }
 
-	entryView.setClickCallback(entryViewClickCallback);
+	    panelFooterTotal.appendChild(
+		document.createTextNode(newValue));
 
-	entryView.setUserChangePriceCallback(
-	    internalUserChangePriceCallback);
+	};
+	
+	// make collapsible
+	panelHeading.addEventListener('click', function(evt) {
+	    if (panelBody.style.display === 'none') {
+		if (!isLoaded) {
+		    isLoaded = true;
 
-    }
+		    loadEntries();
+		}
+
+		panelBody.style.display = 'block';
+		panelFooter.style.display = 'block';
+	    }
+	    else {
+		panelBody.style.display = 'none';
+		panelFooter.style.display = 'none';
+	    }
+	});
+
+    })();
+
+
+    
+    this.setUserChangePriceCallback = function(func) {
+	if (typeof(func) !== 'function') {
+	    throw new TypeError('expecting a function');
+	}
+
+	externalUserChangePriceCallback = func;
+    };
+
 
 
 
