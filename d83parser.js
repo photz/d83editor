@@ -1,42 +1,55 @@
+function d83FormatViolationError(message) {
+    this.message = message;
+ 
+   // Use V8's native method if available, otherwise fallback
+    if ("captureStackTrace" in Error)
+        Error.captureStackTrace(this, d83FormatViolationError);
+    else
+        this.stack = (new Error()).stack;
+}
+
+d83FormatViolationError.prototype = Object.create(Error.prototype);
+d83FormatViolationError.prototype.name = "d83FormatViolationError";
+d83FormatViolationError.prototype.constructor = d83FormatViolationError;
+
 var Unit = {
-    M: {
-	toString: function() {
-	    return 'm';
-	}
+    M: function() {
+	
     },
-    M2: {
-	toString: function() {
-	    return 'm^2';
-	}
+
+    M2: function() {
+
+	
     },
-    M3: {
-	toString: function() {
-	    return 'm^3';
-	}
+
+    M3: function() {
+	
+
     },
-    KG: {
-	toString: function() {
-	    return 'kg';
-	}
+
+    KG: function() {
+	
     },
-    T: {
-	toString: function() {
-	    return 't';
-	}
+
+    T: function() {
+	
     },
-    L: {
-	toString: function() {
-	    return 'l';
-	}
-    }
+
+    L: function() {
+	
+    },
+    
 };
 
 var Quantity = function(pre, post, unit) {
     var that = this;
 
+
     this.pre = pre;
     this.post = post;
     this.unit = unit;
+
+    
 
     this.toString = function() {
 	return that.pre + ' ' + that.unit;
@@ -61,6 +74,26 @@ var d83toplevelnode = function(lvl1) {
 	watch: undefined
     };
 
+    this.getPrettyPath = function() {
+	return that.lvl1.toString();
+    };
+
+    // FIXME maybe it'll be necessary to cache the results
+    // and recaculate whenever they change
+    this.getNetTotal = function() {
+	var sum = 0;
+
+	for (node in that.nodes) {
+
+	    if ('watch' == node) continue;
+	    
+	    sum += that.nodes[node].getNetTotal();
+
+	}
+
+	return sum;
+    };
+
     this.toString = function() {
 	return that.summary;
     };
@@ -83,6 +116,22 @@ var d83node = function(lvl1, lvl2) {
 
     this.nodeSummary = '';
     this.summary = '';
+
+    this.getPrettyPath = function() {
+	return that.lvl1 + '.' + that.lvl2;
+    };
+
+    this.getNetTotal = function() {
+	var sum = 0;
+
+	for (entry in that.entries) {
+	    if ('watch' == entry) continue;
+
+	    sum += that.entries[entry].getNetTotal();
+	}
+
+	return sum;
+    };
 
     this.entries = {
 	watch: undefined
@@ -114,8 +163,20 @@ var d83entry = function(lvl1, lvl2, lvl3) {
 
     this.quantity = null;
 
+    // in euro cents (?) depending on the currency
+    // specified in the header of the d83 file
+    //this.price = 0;
+
     this.summary = '';
     this.description = '';
+
+    this.getNetTotal = function() {
+	return 5.0;
+    };
+
+    this.getPrettyPath = function() {
+	return [lvl1, lvl2, lvl3].join('.');
+    };
 
     this.toString = function() {
 	return that.summary;
@@ -138,6 +199,20 @@ var d83parser = function(inputtext) {
     var currentNode = null;
     var currentTopLevelNode = null;
     
+    var units = {
+	'M': 0,
+	'M2': 1,
+	'M3': 2,
+	'KG': 3,
+	'PSCH': 4,
+	'ST': 5,
+	'T': 6,
+	'H': 7,
+	'L': 8,
+	'D': 9,
+	'WO': 10
+    };
+
 
     this.issuingCompany = '';
 
@@ -149,13 +224,16 @@ var d83parser = function(inputtext) {
 	watch: undefined
     };
 
+    // index into the string that contains the d83 file
+    var currentIndex = 0;
+
     var isDa90 = function(text) {
 	return text.substring(0, 2) == '00'
 	    || text.substring(0, 2) == 'T0';
     };
 
     if (!isDa90(text)) {
-	throw new Error('The input string violates the DA 90 format.');
+	throw new d83FormatViolationError('non-conformant header');
     }
 
     var commitCurrentNode = function() {
@@ -270,10 +348,30 @@ var d83parser = function(inputtext) {
 	    commitEntry();
 	}
 
-	var lvl1 = parseInt(line.substring(0, 2));
-	var lvl2 = parseInt(line.substring(2, 4));
-	var lvl3 = parseInt(line.substring(4, 8));
+	var lvl1begin = 0,
+	    lvl1len = 2;
 
+	var lvl2begin = 2,
+	    lvl2len = 2;
+
+	var lvl3begin = 4,
+	    lvl3len = 4;
+
+	//
+	// extract the position triple
+	//
+	var lvl1 = parseInt(line.substring(lvl1begin,
+					   lvl1begin + lvl1len));
+
+	var lvl2 = parseInt(line.substring(lvl2begin,
+					   lvl2begin + lvl2len));
+
+	var lvl3 = parseInt(line.substring(lvl3begin,
+					   lvl3begin + lvl3len));
+
+	//
+	// extract the quantity and unit
+	// 
 	var pre = parseInt(line.substring(21, 29));
 	var post = parseInt(line.substring(29, 32));
 	var unit = line.substring(32, 40).trimRight();
@@ -348,38 +446,31 @@ var d83parser = function(inputtext) {
     };
 
 
-    var units = {
-	'M': 0,
-	'M2': 0,
-	'M3': 0,
-	'KG': 0,
-	'PSCH': 0,
-	'ST': 0,
-	'T': 0,
-	'H': 0,
-	'L': 0,
-	'D': 0,
-	'WO': 0
-    };
 
 
     
+    var eof = function() {
+	return text.length <= currentIndex;
+    }
+
     var getNextLine = function() {
+	var nextLinefeed = text.indexOf("\n", currentIndex + 1);
 
-	var next = text.indexOf("\n");
+	if (nextLinefeed == -1) {
+	    return null;
+	}
 
-	var line = text.substring(0, next).trim();
-	
-	text = text.substring(next + 1, text.length - next);
+	var line = text.substring(currentIndex, nextLinefeed).trim();
 
-
+	currentIndex = nextLinefeed;
 
 	return line;
     };
-    
 
     
     var parseLine = function(line) {
+	// FIXME in some cases the initial two chars are not numeric
+	// e.g. "T0"
 	var lineType = parseInt(line.substring(0, 2));
 
 	var lineNumberLen = 6;
@@ -397,16 +488,12 @@ var d83parser = function(inputtext) {
 
     this.parse = function() {
 
+	while (!eof()) {
 
-	while (true) {
-	    var line;
+	    var line = getNextLine();
 
-	    line = getNextLine();
-
-	    if (line == '') {
-		break;
-	    }
-
+	    if (null == line) break;
+	    
 	    parseLine(line);
 	};
     };
