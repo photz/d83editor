@@ -26,7 +26,12 @@ var EntryView = function(entry) {
     posField.classList.add('col-md-1');
     row.appendChild(posField);
 
-    posField.innerHTML = '<span class="label label-default">' + entry.getPrettyPath() + '</span>';
+    // create a label for this entry's path/position
+    var label = document.createElement('span');
+    label.classList.add('label');
+    label.classList.add('label-default');
+    label.appendChild(document.createTextNode(entry.getPrettyPath()));
+    posField.appendChild(label);
 
     var summaryField = document.createElement('div');
     row.appendChild(summaryField);
