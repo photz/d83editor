@@ -4,6 +4,7 @@ var DetailsPanel = function(container) {
     detailsPanel.classList.add('panel');
     detailsPanel.classList.add('panel-info');
     detailsPanel.style.position = 'absolute';
+    detailsPanel.style.display = 'none';
     
     container.appendChild(detailsPanel);
 
@@ -22,6 +23,14 @@ var DetailsPanel = function(container) {
     var detailsPanelBodyPar = document.createElement('p');
     detailsPanelBody.appendChild(detailsPanelBodyPar);
 
+
+    this.showPanel = function() {
+	detailsPanel.style.display = 'block';
+    };
+
+    this.hidePanel = function() {
+	detailsPanel.style.display = 'none';
+    };
 
     this.setEntry = function(entry) {
 

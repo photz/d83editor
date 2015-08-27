@@ -41,12 +41,12 @@ var Unit = {
     
 };
 
+// TODO rename to d83quantity?
 var Quantity = function(pre, post, unit) {
     var that = this;
 
-
-    this.pre = pre;
-    this.post = post;
+    this.pre = parseInt(pre);
+    this.post = parseInt(post);
     this.unit = unit;
 
     
@@ -170,8 +170,10 @@ var d83entry = function(lvl1, lvl2, lvl3) {
     this.summary = '';
     this.description = '';
 
+    this.netPricePerUnit = 0;
+
     this.getNetTotal = function() {
-	return 5.0;
+	return that.quantity.pre * that.netPricePerUnit;
     };
 
     this.getPrettyPath = function() {
@@ -372,9 +374,13 @@ var d83parser = function(inputtext) {
 	//
 	// extract the quantity and unit
 	// 
+	var unitSpecBegin = 32;
+	var unitSpecMaxLen = 4;
+
 	var pre = parseInt(line.substring(21, 29));
 	var post = parseInt(line.substring(29, 32));
-	var unit = line.substring(32, 40).trimRight();
+	var unit = line.substring(unitSpecBegin,
+				  unitSpecBegin + unitSpecMaxLen).trimRight();
 
 	if (!(unit in units)) {
 	    // TODO unknown/illicit unit
@@ -496,6 +502,10 @@ var d83parser = function(inputtext) {
 	    
 	    parseLine(line);
 	};
+
+	if (currentEntry != null) commitEntry();
+	if (currentNode != null) commitCurrentNode();
+	if (currentTopLevelNode != null) commitTopLevelNode();
     };
 
     

@@ -21,23 +21,6 @@ function getOffsetRect(elem) {
 };
 
 
-var NodeView = function() {
-
-};
-
-var TopLevelNodeView = function() {
-
-};
-
-var DirView = function() {
-
-};
-
-
-
-
-
-
 var d83editor = function() {
 
     var that = this;
@@ -55,6 +38,8 @@ var d83editor = function() {
     var activeEntry = null;
 
     var detailsPanel = null;
+
+    var fileList = null;
 
     //
     // private methods
@@ -115,8 +100,8 @@ var d83editor = function() {
 	}
     };
 
-    var fileList = new FileList();
-    fileList.setOpenFileCallback(openFileCallback);
+
+
 
 
 
@@ -188,12 +173,17 @@ var d83editor = function() {
 	top.appendChild(uploadFormBox);
 
 
+
 	var fileListBox = document.createElement('div');
 	fileListBox.classList.add('col-md-3');
-	fileListBox.appendChild(fileList.getElement());
+
 	top.appendChild(fileListBox);
 
+	fileList = new FileList();
+	fileList.setOpenFileCallback(openFileCallback);
 
+	fileListBox.appendChild(fileList.getElement());
+	
 	//
 	// bottom
 	//
@@ -254,145 +244,22 @@ var d83editor = function() {
 	console.log('user changed entry `' + entry.summary + '`');
     };
     
-    var drawNode = function(node) {
-	var box = document.createElement('div');
-	box.classList.add('panel');
-	box.classList.add('panel-default');
-	
-	var nodeHeader = document.createElement('div');
-	nodeHeader.classList.add('panel-heading');
-	nodeHeader.innerHTML = '<h4 class="panel-title">' +
-	    node.getPrettyPath() + ' ' + node.nodeSummary + '</h4>';
-	nodeHeader.style.cursor = 'pointer';
-	box.appendChild(nodeHeader);
-
-	var rightBox = document.createElement('div');
-	rightBox.classList.add('panel-body');
-	rightBox.classList.add('list-group');
-	rightBox.style.display = 'none';
-	box.appendChild(rightBox);
-
-	//
-	// panel footer
-	//
-	var panelFooter = document.createElement('div');
-	panelFooter.classList.add('panel-footer');
-	box.appendChild(panelFooter);
-	panelFooter.style.display = 'none';
-
-	var panelFooterTotal = document.createElement('div');
-	panelFooterTotal.classList.add('col-md-offset-11');
-	panelFooter.appendChild(panelFooterTotal);
-
-
-	panelFooterTotal.appendChild(
-	    document.createTextNode(node.getNetTotal()));
-	
-	// make collapsible
-	nodeHeader.addEventListener('click', function(evt) {
-	    if (rightBox.style.display == 'none') {
-		rightBox.style.display = 'block';
-		panelFooter.style.display = 'block';
-	    }
-	    else {
-		rightBox.style.display = 'none';
-		panelFooter.style.display = 'none';
-	    }
-	});
-
-	for (entry in node.entries) {
-	    if ('watch' == entry) continue;
-
-	    var thisEntry = node.entries[entry];
-
-	    var entryView = new EntryView(thisEntry);
-
-	    rightBox.appendChild(entryView.getElement());
-
-	    // set callbacks
-
-	    entryView.setClickCallback(entryViewClickCallback);
-
-	    entryView.setUserChangePriceCallback(userChangePriceCallback);
-
-	}
-
-	return box;
-    };
-
-    var drawTopLevelNode = function(topLevelNode) {
-	var box = document.createElement('div');
-	box.classList.add('panel');
-	box.classList.add('panel-primary');
-	
-	var topLevelNodeHeader = document.createElement('div');
-	topLevelNodeHeader.classList.add('panel-heading');
-	topLevelNodeHeader.innerHTML = '<h3 class="panel-title">' +
-	    topLevelNode.getPrettyPath() + ' ' +
-	    topLevelNode.nodeSummary + '</h3>';
-	topLevelNodeHeader.style.cursor = 'pointer';
-	box.appendChild(topLevelNodeHeader);
-	
-
-	var panelBody = document.createElement('div');
-	panelBody.classList.add('panel-body');
-	panelBody.classList.add('panel-group');
-	panelBody.style.display = 'none';
-	box.appendChild(panelBody);
-
-
-	//
-	// panel footer
-	//
-	var panelFooter = document.createElement('div');
-	panelFooter.classList.add('panel-footer');
-	box.appendChild(panelFooter);
-	panelFooter.style.display = 'none';
-
-	var panelFooterTotal = document.createElement('div');
-	panelFooterTotal.classList.add('col-md-offset-11');
-	panelFooter.appendChild(panelFooterTotal);
-
-
-	panelFooterTotal.appendChild(
-	    document.createTextNode(topLevelNode.getNetTotal()));
-
-	box.updateNetTotal = function() {
-	    
-	};
-
-	//
-	// make collapsible
-	//
-	topLevelNodeHeader.addEventListener('click', function(evt) {
-	    if (panelBody.style.display == 'none') {
-		panelBody.style.display = 'block';
-		panelFooter.style.display = 'block';
-	    }
-	    else {
-		panelBody.style.display = 'none';
-		panelFooter.style.display = 'none';
-	    }
-	});
-
-	for (node in topLevelNode.nodes) {
-
-	    if ('watch' == node) continue;
-
-	    panelBody.appendChild(drawNode(topLevelNode.nodes[node]));
-	}
-
-	return box;
-    };
 
     var drawDir = function(dir) {
 	var box = document.createElement('div');
 	box.classList.add('panel-group');
 
+	if (typeof(entryViewClickCallback) != 'function') {
+	    throw new TypeError('entryViewClickCallback must be a function');
+	}
+
 	for (topLevelNode in dir) {
 	    if ('watch' == topLevelNode) continue;
 
-	    box.appendChild(drawTopLevelNode(dir[topLevelNode]));
+	    var topLevelNodeView = new TopLevelNodeView(dir[topLevelNode], entryViewClickCallback);
+	    
+
+	    box.appendChild(topLevelNodeView.getElement());
 	}
 
 	return box;

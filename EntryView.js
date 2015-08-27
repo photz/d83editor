@@ -12,6 +12,10 @@ var EntryView = function(entry) {
     };
 
     this.setClickCallback = function(func) {
+	if (typeof(func) != 'function') {
+	    throw new TypeError('expecting a function as a callback');
+	}
+
 	row.onclick = function(evt) {
 	    func(that);
 	};
@@ -21,8 +25,6 @@ var EntryView = function(entry) {
     var posField = document.createElement('div');
     posField.classList.add('col-md-1');
     row.appendChild(posField);
-    //posField.appendChild(document.createTextNode(
-    //entry.getPrettyPath()));
 
     posField.innerHTML = '<span class="label label-default">' + entry.getPrettyPath() + '</span>';
 
@@ -48,16 +50,21 @@ var EntryView = function(entry) {
     //
     var priceField = document.createElement('div');
     priceField.classList.add('col-md-2');
+    priceField.classList.add('form-group');
     row.appendChild(priceField);
     
     var priceInput = document.createElement('input');
     priceInput.classList.add('form-control');
     priceField.appendChild(priceInput);
 
+    var externalUserChangePriceCallback;
+
     this.setUserChangePriceCallback = function(func) {
-	priceInput.onchange = function(evt) {
-	    func(entry);
-	};
+	if (typeof(func) != 'function') {
+	    throw new TypeError('expecting a function');
+	}
+
+	externalUserChangePriceCallback = func;
     };
     
     //
@@ -72,13 +79,16 @@ var EntryView = function(entry) {
     //
     priceInput.addEventListener('change', function(evt) {
 	if (isNaN(priceInput.value)) {
-	    totalPriceField.innerHTML = '<p>?</p>';
+	    priceField.classList.add('has-error');
 	}
 	else {
-	    var pricePerUnit = parseFloat(priceInput.value);
+	    entry.netPricePerUnit = parseFloat(priceInput.value);
+	    priceField.classList.remove('has-error');
 	    
 	    totalPriceField.innerHTML =
-		'<p>' + priceInput.value + '</p>';
+		'<p>' + entry.getNetTotal() + '</p>';
+
+	    externalUserChangePriceCallback();
 	}
     });
 
